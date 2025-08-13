@@ -2,6 +2,7 @@
 'use client';
 import { useReadContract } from 'wagmi';
 import { useState } from 'react';
+import { contractAbi } from '@/lib/contract';
 
 export default function Verify() {
   const [eventId, setEventId] = useState('');

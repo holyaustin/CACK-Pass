@@ -1,6 +1,8 @@
 // Only visible to owner
 'use client';
+import { contractAbi } from '@/lib/contract';
 import { useWriteContract } from 'wagmi';
+import { useState } from 'react';
 
 export default function AddEvent() {
   const { writeContract } = useWriteContract();
