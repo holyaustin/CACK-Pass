@@ -34,3 +34,14 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+## 🔁 Flow:
+1. Organizer opens /verify page
+2. Enters Event ID (e.g., 0)
+3. Clicks "Start QR Scanner"
+4. User shows QR code (containing their Ethereum address)
+5. Scanner reads address from QR
+6. Frontend calls verifyAdmission(eventId, address)
+7. Smart contract returns true if user minted NFT or got POAP
+Toast shows ✅ or ❌
