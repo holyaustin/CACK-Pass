@@ -4,9 +4,8 @@ pragma solidity ^0.8.24;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-contract OnchainSocialMixer is Ownable,  ERC721 {
+contract OnchainSocialMixer is Ownable, ERC721 {
     using Counters for Counters.Counter;
 
     // Event structure
@@ -27,7 +26,7 @@ contract OnchainSocialMixer is Ownable,  ERC721 {
     // Track user's NFT count across all past events (for discount logic)
     mapping(address => uint256) public nftBalance;
 
-    // POAP NFT for post-event distribution
+    // POAP tracking: eventID → address → bool
     mapping(uint256 => mapping(address => bool)) public hasReceivedPOAP;
 
     // Events
@@ -36,6 +35,7 @@ contract OnchainSocialMixer is Ownable,  ERC721 {
     event DiscountUpdated(uint256 newDiscountPercent);
     event POAPAirdropped(address indexed recipient, uint256 indexed eventId);
 
+
     // ============= MODIFIERS =============
     modifier onlyAdmin() {
         require(msg.sender == owner(), "Only admin can call this");
@@ -43,9 +43,7 @@ contract OnchainSocialMixer is Ownable,  ERC721 {
     }
 
     // ============= CONSTRUCTOR =============
-    constructor() ERC721("OnchainSocialMixer", "OSM") {
-        // No input in constructor
-    }
+    constructor() ERC721("OnchainSocialMixer", "OSM") {}
 
     // ============= ADMIN FUNCTIONS =============
 
@@ -91,33 +89,30 @@ contract OnchainSocialMixer is Ownable,  ERC721 {
 
     /// @notice Mint event NFT. Users get discount if they own any past NFTs
     /// @param eventId The event to mint for
-function mintEventNFT(uint256 eventId) external {
-    // Checks
-    require(eventId < eventCounter.current(), "Invalid event ID");
-    Event storage eventRef = events[eventId];
-    require(!eventRef.hasMinted[msg.sender], "Already minted for this event");
+    function mintEventNFT(uint256 eventId) external {
+        // Checks
+        require(eventId < eventCounter.current(), "Invalid event ID");
+        Event storage eventRef = events[eventId];
+        require(!eventRef.hasMinted[msg.sender], "Already minted for this event");
 
-    // Get tokenId
-    uint256 tokenId = eventRef.tokenIdCounter.current();
+        // Get tokenId
+        uint256 tokenId = eventRef.tokenIdCounter.current();
 
-    // Mint NFT
-    _safeMint(msg.sender, tokenId);
+        // Mint NFT
+        _safeMint(msg.sender, tokenId);
 
-    // State updates
-    eventRef.tokenIdCounter.increment();
-    eventRef.hasMinted[msg.sender] = true;
-    nftBalance[msg.sender]++;
+        // State updates
+        eventRef.tokenIdCounter.increment();
+        eventRef.hasMinted[msg.sender] = true;
+        nftBalance[msg.sender]++;
 
-    emit NFTMinted(msg.sender, eventId, tokenId);
-}
+        emit NFTMinted(msg.sender, eventId, tokenId);
+    }
 
     /// @notice Check discount for user based on previous NFT ownership
     /// @return Final discount percent (either global or enhanced if eligible)
     function getUserDiscount() external view returns (uint256) {
-        if (nftBalance[msg.sender] > 0) {
-            return globalDiscountPercent;
-        }
-        return 0;
+        return nftBalance[msg.sender] > 0 ? globalDiscountPercent : 0;
     }
 
     /// @notice Check if user minted for a specific event
@@ -133,14 +128,18 @@ function mintEventNFT(uint256 eventId) external {
         return eventCounter.current();
     }
 
-    // ============= INTERNAL OVERRIDES =============
-
-    /// @dev Override to allow setting token URI
-    function _setTokenURI(uint256 tokenId, string memory _uri) internal virtual {
-        _setTokenURI(tokenId, _uri);
+    /// ✅ NEW: On-Chain Verification for QR-Based Admission
+    /// @notice Verify if a user can attend an event (owns NFT ticket or POAP)
+    /// @param eventId The event ID
+    /// @param user The attendee's address
+    /// @return bool True if admitted
+    function verifyAdmission(uint256 eventId, address user) external view returns (bool) {
+        return events[eventId].hasMinted[user] || hasReceivedPOAP[eventId][user];
     }
 
+    // ============= INTERNAL OVERRIDES =============
+
     function _baseURI() internal pure override returns (string memory) {
-        return ""; // We use custom per-token URI
+        return ""; // Custom per-token URI via metadata
     }
 }
