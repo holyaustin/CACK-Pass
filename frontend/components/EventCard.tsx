@@ -12,10 +12,10 @@ export default function EventCard({ event }: { event: any }) {
             <span>📍 {event.location}</span>
           </div>
           <div className="flex space-x-2">
-            <span className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs rounded-full font-semibold">
+            <span className="px-3 py-1 bg-green-500 text-white text-xs rounded-full font-semibold">
               NFT Ticket
             </span>
-            <span className="px-3 py-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs rounded-full font-semibold">
+            <span className="px-3 py-1 bg-orange-500 text-white text-xs rounded-full font-semibold">
               POAP
             </span>
           </div>
