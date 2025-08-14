@@ -1,0 +1,55 @@
+{
+  "name": "Web3 DevCon – Global Developer Pass",
+  "description": "Official NFT for Web3 DevCon 2025, the premier global conference for blockchain engineers, protocol designers, and smart contract auditors. Includes access to all sessions, hackathon entry, and exclusive networking events.",
+  "image": "https://cyan-heavy-kangaroo-977.mypinata.cloud/ipfs/bafkreifoyuiephhqwinmzniqkt54jcz73b6nhbfpjhzi4k7yiht7q7r5uu?pinataGatewayToken=Iss53sCyzaPLsP6lZvZ1asjo3DUcy6hbZLbhrwCzbtXCtTVWQn76QRFJ1ngj_CHT",
+  "external_url": "https://web3devcon.org/pass/1",
+  "animation_url": "https://ipfs.io/ipfs/QmYtUimyqHkkFQRcNYtWwKVGWvGsWuUuVwR3qLsXsG4aGq/devcon-animation.mp4",
+  "attributes": [
+    {
+      "trait_type": "Event",
+      "value": "Web3 DevCon 2025"
+    },
+    {
+      "trait_type": "Type",
+      "value": "Developer Pass"
+    },
+    {
+      "trait_type": "Access",
+      "value": "All Sessions, Hackathon, Workshops"
+    },
+    {
+      "trait_type": "Date",
+      "value": "September 5–7, 2025"
+    },
+    {
+      "trait_type": "Location",
+      "value": "Berlin, Germany"
+    },
+    {
+      "trait_type": "Benefits",
+      "value": "Swag, Grants, Project Visibility"
+    },
+    {
+      "trait_type": "Edition",
+      "value": 1,
+      "max_value": 2000
+    },
+    {
+      "trait_type": "Transferable",
+      "value": false,
+      "display_type": "boolean"
+    },
+    {
+      "trait_type": "Redeemed",
+      "value": false,
+      "display_type": "boolean"
+    }
+  ],
+  "background_color": "0F0F23",
+  "properties": {
+    "resale_policy": "non-transferable",
+    "issued_by": "Web3 DevCon Foundation",
+    "blockchain": "Ethereum",
+    "contract_address": "0x8ba1f109551bD432803012645ac136ddd64DBA72"
+  }
+}

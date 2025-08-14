@@ -45,3 +45,24 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 6. Frontend calls verifyAdmission(eventId, address)
 7. Smart contract returns true if user minted NFT or got POAP
 Toast shows ✅ or ❌
+
+
+Birthday
+ipfs://bafkreicrawhgfltctzleupjon4l5nkwnfsqog2v2zbncxdy4v2n7wv5suq
+
+https://cyan-heavy-kangaroo-977.mypinata.cloud/ipfs/bafkreicrawhgfltctzleupjon4l5nkwnfsqog2v2zbncxdy4v2n7wv5suq?pinataGatewayToken=Iss53sCyzaPLsP6lZvZ1asjo3DUcy6hbZLbhrwCzbtXCtTVWQn76QRFJ1ngj_CHT
+
+
+ETH ENUGU
+ipfs://bafkreibrnje7yz7nfz74hiogl7lqpsjuotdksrrw6ik6hwjdmnpatbaap4
+
+https://cyan-heavy-kangaroo-977.mypinata.cloud/ipfs/bafkreibrnje7yz7nfz74hiogl7lqpsjuotdksrrw6ik6hwjdmnpatbaap4?pinataGatewayToken=Iss53sCyzaPLsP6lZvZ1asjo3DUcy6hbZLbhrwCzbtXCtTVWQn76QRFJ1ngj_CHT
+
+Web3 devcon
+ipfs://bafkreieqe7wb6o5onj67q5nz7tm5vun63pmncw7p4bkvjacj2oocqiummy
+https://cyan-heavy-kangaroo-977.mypinata.cloud/ipfs/bafkreieqe7wb6o5onj67q5nz7tm5vun63pmncw7p4bkvjacj2oocqiummy?pinataGatewayToken=Iss53sCyzaPLsP6lZvZ1asjo3DUcy6hbZLbhrwCzbtXCtTVWQn76QRFJ1ngj_CHT
+
+Jazz
+ipfs://bafkreieqe7wb6o5onj67q5nz7tm5vun63pmncw7p4bkvjacj2oocqiummy
+
+https://cyan-heavy-kangaroo-977.mypinata.cloud/ipfs/bafkreidzqp5qcuqoysamwb6aixcr5xp6lnhugjmouluwufxokvs5tqffie?pinataGatewayToken=Iss53sCyzaPLsP6lZvZ1asjo3DUcy6hbZLbhrwCzbtXCtTVWQn76QRFJ1ngj_CHT

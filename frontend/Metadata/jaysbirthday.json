@@ -1,0 +1,55 @@
+{
+  "name": "Jay's Birthday Party – VIP Guest 2025",
+  "description": "An invite-only NFT granting VIP access to Jay's legendary 30th birthday celebration. Includes backstage access, digital guestbook signature rights, and lifetime bragging rights. On-chain memories start here.",
+  "image": "https://cyan-heavy-kangaroo-977.mypinata.cloud/ipfs/bafkreidbrys64oy2ymolpocmayn6woax4wmq5r544ja3zkp5vawync5je4?pinataGatewayToken=Iss53sCyzaPLsP6lZvZ1asjo3DUcy6hbZLbhrwCzbtXCtTVWQn76QRFJ1ngj_CHT",
+  "external_url": "https://jaysbirthday.xyz/vip/1",
+  "animation_url": "https://ipfs.io/ipfs/QmYtUimyqHkkFQRcNYtWwKVGWvGsWuUuVwR3qLsXsG4aGq/jay-birthday-animation.mp4",
+  "attributes": [
+    {
+      "trait_type": "Event",
+      "value": "Jay's Birthday Party"
+    },
+    {
+      "trait_type": "Type",
+      "value": "VIP Guest"
+    },
+    {
+      "trait_type": "Occasion",
+      "value": "30th Birthday"
+    },
+    {
+      "trait_type": "Date",
+      "value": "May 22, 2025"
+    },
+    {
+      "trait_type": "Location",
+      "value": "Los Angeles, CA"
+    },
+    {
+      "trait_type": "Perks",
+      "value": "Open Bar, Photo Booth, Gift Lane"
+    },
+    {
+      "trait_type": "RSVP Status",
+      "value": "Confirmed",
+      "display_type": "boost_number"
+    },
+    {
+      "trait_type": "Transferable",
+      "value": false,
+      "display_type": "boolean"
+    },
+    {
+      "trait_type": "Plus One",
+      "value": true,
+      "display_type": "boolean"
+    }
+  ],
+  "background_color": "9C27B0",
+  "properties": {
+    "issued_by": "Jay's Inner Circle",
+    "purpose": "Personal Event, Digital Souvenir",
+    "blockchain": "Ethereum",
+    "contract_address": "0x8ba1f109551bD432803012645ac136ddd64DBA72"
+  }
+}

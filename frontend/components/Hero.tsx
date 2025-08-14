@@ -18,12 +18,13 @@ export default function Hero() {
 
       {/* Content */}
       <div className="relative z-10 max-w-4xl mx-auto">
-        <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
-          Web3-Powered <br />
+        <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight text-orange-400">
+          Blockchain-Powered <br />
           <span className="text-green-500">Event Ticketing</span>
         </h1>
-        <p className="text-lg md:text-xl text-gray-100 mb-10 max-w-2xl mx-auto">
-          Mint NFT tickets, earn discounts, and prove attendance with POAPs — all on-chain.
+        <p className="text-lg md:text-2xl text-gray-100 mb-10 max-w-3xl mx-auto font-bold">
+         
+          Discover events, Buy tickets  and get your ticket as a collectible NFT.
         </p>
         <Link
           href="/events"

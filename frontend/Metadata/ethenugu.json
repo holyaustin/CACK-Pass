@@ -1,0 +1,53 @@
+{
+  "name": "ETH Enugu – Community Builder",
+  "description": "A recognition NFT awarded to active contributors of the ETH Enugu meetup. This badge celebrates on-the-ground Web3 education, developer workshops, and blockchain advocacy in Eastern Nigeria.",
+  "image": "https://cyan-heavy-kangaroo-977.mypinata.cloud/ipfs/bafkreigs6rtqa6ez7yeg2oleptsahsbguqfrkyccejvgmzqhh6aebphrgy?pinataGatewayToken=Iss53sCyzaPLsP6lZvZ1asjo3DUcy6hbZLbhrwCzbtXCtTVWQn76QRFJ1ngj_CHT",
+  "external_url": "https://ethenugu.org/builder/1",
+  "animation_url": "https://ipfs.io/ipfs/QmYtUimyqHkkFQRcNYtWwKVGWvGsWuUuVwR3qLsXsG4aGq/ethenugu-animation.mp4",
+  "attributes": [
+    {
+      "trait_type": "Event",
+      "value": "ETH Enugu"
+    },
+    {
+      "trait_type": "Type",
+      "value": "Community Builder"
+    },
+    {
+      "trait_type": "Role",
+      "value": "Organizer & Educator"
+    },
+    {
+      "trait_type": "Date",
+      "value": "April 12, 2025"
+    },
+    {
+      "trait_type": "Location",
+      "value": "Enugu, Nigeria"
+    },
+    {
+      "trait_type": "Purpose",
+      "value": "Web3 Education, Developer Growth"
+    },
+    {
+      "trait_type": "Rarity",
+      "value": "Rare"
+    },
+    {
+      "trait_type": "Transferable",
+      "value": false,
+      "display_type": "boolean"
+    },
+    {
+      "trait_type": "Claimed",
+      "value": true,
+      "display_type": "boolean"
+    }
+  ],
+  "background_color": "1A4D2E",
+  "properties": {
+    "issued_by": "ETH Enugu Core Team",
+    "blockchain": "Ethereum",
+    "contract_address": "0x8ba1f109551bD432803012645ac136ddd64DBA72"
+  }
+}

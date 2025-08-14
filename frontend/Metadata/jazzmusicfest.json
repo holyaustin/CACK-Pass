@@ -1,0 +1,55 @@
+{
+  "name": "Jazz Musical Fest – Official Experience",
+  "description": "An exclusive NFT granting access and commemoration of the legendary Jazz Musical Fest. This digital pass unlocks special perks, live performance streams, and serves as a lifetime collectible of the 2025 edition.",
+  "image": "https://cyan-heavy-kangaroo-977.mypinata.cloud/ipfs/bafkreicw7gn2sue5h5kpqhatjznxgdtoifbyuq4rte32wrvumg72zibmfy?pinataGatewayToken=Iss53sCyzaPLsP6lZvZ1asjo3DUcy6hbZLbhrwCzbtXCtTVWQn76QRFJ1ngj_CHT",
+  "external_url": "https://jazzfest2025.com/nft/1",
+  "animation_url": "https://ipfs.io/ipfs/QmYtUimyqHkkFQRcNYtWwKVGWvGsWuUuVwR3qLsXsG4aGq/jazzfest-animation.mp4",
+  "attributes": [
+    {
+      "trait_type": "Event",
+      "value": "Jazz Musical Fest"
+    },
+    {
+      "trait_type": "Type",
+      "value": "Official Pass"
+    },
+    {
+      "trait_type": "Access",
+      "value": "Full Festival + Digital Archive"
+    },
+    {
+      "trait_type": "Date",
+      "value": "July 18–20, 2025"
+    },
+    {
+      "trait_type": "Location",
+      "value": "New Orleans, LA"
+    },
+    {
+      "trait_type": "Utility",
+      "value": "Ticket, Collectible, VIP Perks"
+    },
+    {
+      "trait_type": "Edition",
+      "value": 1,
+      "max_value": 5000
+    },
+    {
+      "trait_type": "Transferable",
+      "value": true,
+      "display_type": "boolean"
+    },
+    {
+      "trait_type": "Redeemed",
+      "value": false,
+      "display_type": "boolean"
+    }
+  ],
+  "background_color": "0B1D3A",
+  "properties": {
+    "resale_policy": "allowed",
+    "issued_by": "JazzFest DAO",
+    "blockchain": "Ethereum",
+    "contract_address": "0x8ba1f109551bD432803012645ac136ddd64DBA72"
+  }
+}

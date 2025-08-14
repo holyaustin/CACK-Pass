@@ -1,5 +1,6 @@
 // components/Footer.tsx
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -7,7 +8,14 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 text-center">
         <Link href="/" className="flex justify-center items-center space-x-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
-            <span className="font-bold text-white">OSM</span>
+                                <Image
+                                  src="/logoosm.png"
+                                  alt="Onchain Social Mixer"
+                                  width={1000}
+                                  height={500}
+                                  className="rounded-xl shadow-2xl mx-auto border-4 border-orange-400"
+                                />
+
           </div>
           <span className="text-lg font-bold">Onchain Social Mixer</span>
         </Link>
