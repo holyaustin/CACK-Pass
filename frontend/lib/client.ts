@@ -1,6 +1,6 @@
 // lib/client.ts
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { avalanche, polygon, optimism } from 'wagmi/chains';
+import { avalanche } from 'wagmi/chains';
 import { http } from 'viem';
 
 export const config = getDefaultConfig({
@@ -12,3 +12,4 @@ export const config = getDefaultConfig({
     [avalanche.id]: http(),
   },
 });
+

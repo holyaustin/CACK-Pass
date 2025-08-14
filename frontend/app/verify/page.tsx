@@ -4,7 +4,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useReadContract } from 'wagmi';
 import { contractAbi } from '../../lib/contract';
-import { BrowserMultiFormatReader, Result } from '@zxing/library';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -14,9 +13,10 @@ export default function VerifyPage() {
   const [result, setResult] = useState<string | null>(null);
   const [verified, setVerified] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const codeReader = useRef<BrowserMultiFormatReader | null>(null);
+  const codeReader = useRef<any>(null);
+  const isClient = typeof window !== 'undefined';
 
-  const { data: admitted, isError, isLoading } = useReadContract({
+  const { data: admitted } = useReadContract({
     address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
     abi: contractAbi,
     functionName: 'verifyAdmission',
@@ -26,81 +26,91 @@ export default function VerifyPage() {
     },
   });
 
+  // 🔥 Load ZXing only on client, after mount
   useEffect(() => {
-    codeReader.current = new BrowserMultiFormatReader();
-    return () => {
-      if (scanning) {
-        codeReader.current?.reset();
+    if (!isClient) return;
+
+    const loadZxing = async () => {
+      try {
+        const { BrowserMultiFormatReader } = await import('@zxing/library');
+        codeReader.current = new BrowserMultiFormatReader();
+        toast.info('📷 Scanner ready!', { autoClose: 1000 });
+      } catch (err) {
+        console.error('ZXing failed to load:', err);
+        toast.error('❌ Scanner unavailable');
       }
     };
-  }, []);
+
+    loadZxing();
+  }, [isClient]);
 
   useEffect(() => {
     if (admitted === true) {
       setVerified(true);
-      toast.success('✅ Access Granted! User admitted.', { theme: 'colored' });
+      toast.success('✅ Access Granted!', { theme: 'colored' });
     } else if (admitted === false) {
       setVerified(false);
-      toast.error('❌ Access Denied. No valid ticket or POAP.', { theme: 'colored' });
+      toast.error('❌ No valid ticket or POAP.', { theme: 'colored' });
     }
   }, [admitted]);
 
-const startScanner = () => {
-  if (!eventId) {
-    toast.warn('⚠️ Please enter Event ID first!');
-    return;
-  }
+  const startScanner = () => {
+    if (!eventId) {
+      toast.warn('⚠️ Enter Event ID first!');
+      return;
+    }
 
-  setScanning(true);
-  setResult(null);
-  setVerified(null);
+    if (!codeReader.current) {
+      toast.error('❌ Scanner not ready. Try again.');
+      return;
+    }
 
-  // ✅ Add null check
-  if (!codeReader.current || !videoRef.current) return;
+    setScanning(true);
+    setResult(null);
+    setVerified(null);
 
-  codeReader.current
-    .decodeFromVideoDevice(
-      null,
-      videoRef.current,
-      (result: Result | null) => {
-        if (result) {
-          const address = result.getText();
-          if (/^0x[a-fA-F0-9]{40}$/.test(address)) {
-            setResult(address);
-            toast.info(`📱 Scanned: ${address.slice(0, 6)}...${address.slice(-4)}`, {
-              autoClose: 2000,
-            });
-            stopScanner();
-          } else {
-            toast.warn('❌ Invalid wallet address in QR');
+    codeReader.current
+      .decodeFromVideoDevice(
+        null,
+        videoRef.current!,
+        (result: any) => {
+          if (result) {
+            const address = result.getText();
+            if (/^0x[a-fA-F0-9]{40}$/.test(address)) {
+              setResult(address);
+              toast.info(`📱 Scanned: ${address.slice(0, 6)}...${address.slice(-4)}`, {
+                autoClose: 2000,
+              });
+              stopScanner();
+            } else {
+              toast.warn('❌ Invalid address in QR');
+            }
           }
         }
-      }
-    )
-    .catch((err) => {
-      console.error(err);
-      toast.error('❌ Camera access denied or not supported.');
-      setScanning(false);
-    });
-};
+      )
+      .catch((err: Error) => {
+        console.error(err);
+        toast.error(`❌ ${err.message}`);
+        setScanning(false);
+      });
+  };
 
-const stopScanner = () => {
-  if (codeReader.current) {
-    codeReader.current.reset(); // ✅ Safe access
-  }
-  setScanning(false);
-};
+  const stopScanner = () => {
+    if (codeReader.current) {
+      codeReader.current.reset();
+    }
+    setScanning(false);
+  };
 
   const handleManualVerify = () => {
     if (!eventId || !result) {
-      toast.warn('⚠️ Enter Event ID and scan QR code.');
+      toast.warn('⚠️ Enter Event ID and scan QR.');
       return;
     }
     if (!/^0x[a-fA-F0-9]{40}$/.test(result)) {
       toast.error('❌ Invalid Ethereum address.');
       return;
     }
-    // Trigger verification
     toast.info('🔍 Verifying on-chain...');
   };
 
@@ -167,10 +177,10 @@ const stopScanner = () => {
 
           <button
             onClick={handleManualVerify}
-            disabled={!eventId || !result || isLoading}
+            disabled={!eventId || !result}
             className="w-full bg-primary hover:bg-green-700 text-white font-bold py-3 rounded-lg transition"
           >
-            {isLoading ? '🔍 Verifying...' : '✅ Verify On-Chain'}
+            ✅ Verify On-Chain
           </button>
 
           {verified !== null && (
@@ -185,7 +195,7 @@ const stopScanner = () => {
         </div>
 
         <div className="bg-gray-50 p-4 text-center text-sm text-gray-600 border-t">
-          🔐 Verification happens directly on the blockchain
+          🔐 Powered by Onchain Social Mixer
         </div>
       </div>
     </div>

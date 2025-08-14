@@ -1,30 +1,33 @@
 // components/NetworkSelector.tsx
 'use client';
-import { useAccount, useSwitchChain } from 'wagmi';
+import { useSwitchChain } from 'wagmi';
 import { avalanche } from 'wagmi/chains';
 
 export default function NetworkSelector() {
   const { switchChain } = useSwitchChain();
-  const { chain } = useAccount();
 
   return (
-    <div className="flex justify-center space-x-4">
+    <div className="flex justify-center space-x-6">
+      {/* Avalanche */}
       <button
         onClick={() => switchChain({ chainId: avalanche.id })}
-        disabled={chain?.id === avalanche.id}
-        className={`px-6 py-2 rounded-full font-semibold transition ${
-          chain?.id === avalanche.id
-            ? 'bg-red-600 text-white'
-            : 'bg-white text-red-600 border border-red-600 hover:bg-red-50'
-        }`}
+        className="flex flex-col items-center space-y-2 group"
       >
-        Avalanche
+        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+          <img src="/avalanche.png" alt="Avalanche" className="w-10 h-10" />
+        </div>
+        <span className="text-white font-semibold text-sm">Avalanche</span>
       </button>
+
+      {/* Sui */}
       <button
+        className="flex flex-col items-center space-y-2 opacity-70 cursor-not-allowed"
         disabled
-        className="px-6 py-2 rounded-full bg-gray-200 text-gray-500 cursor-not-allowed"
       >
-        Sui (Coming Soon)
+        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg">
+          <img src="/sui.png" alt="Sui" className="w-10 h-10" />
+        </div>
+        <span className="text-white font-semibold text-sm">Sui</span>
       </button>
     </div>
   );
