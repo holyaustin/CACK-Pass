@@ -1,6 +1,6 @@
 # 🎟️ CACK-PASS — Blockchain-Powered Event Ticketing Platform
 
-![CACK-PASS Banner](/frontend/public/logo.png) <!-- Optional: Replace with actual banner URL -->
+![CACK-PASS Banner](/frontend/public/cackpass.jpg) <!-- Optional: Replace with actual banner URL -->
 
 **CACK-PASS** is a decentralized event ticketing platform built on the **Avalanche Fuji Testnet**, leveraging smart contracts to eliminate fraud, scalping, and double-spending in event ticket distribution. Built with **Next.js** and powered by blockchain transparency, CACK-PASS ensures secure, verifiable, and tamper-proof ticket ownership.
 
