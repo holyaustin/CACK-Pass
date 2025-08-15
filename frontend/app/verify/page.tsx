@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useReadContract } from 'wagmi';
 import { contractAbi } from '../../lib/contract';
 import { ToastContainer, toast } from 'react-toastify';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function VerifyPage() {
@@ -115,13 +117,15 @@ export default function VerifyPage() {
   };
 
   return (
+          <>
+            <Header />
     <div className="min-h-screen bg-body py-8 px-4">
       <ToastContainer position="top-right" autoClose={3000} />
 
       <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="bg-primary text-white p-6 text-center">
           <h1 className="text-2xl font-bold">🎟️ On-Chain Admission Check</h1>
-          <p className="text-white/80">Scan QR to verify ticket or POAP</p>
+          <p className="text-white/80 font-bold">Scan QR to Check / verify ticket </p>
         </div>
 
         <div className="p-6 space-y-6">
@@ -199,5 +203,7 @@ export default function VerifyPage() {
         </div>
       </div>
     </div>
+          <Footer />
+          </>
   );
 }
