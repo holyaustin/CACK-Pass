@@ -4,6 +4,8 @@
 import { useAccount, useReadContract } from 'wagmi';
 import { contractAbi } from '../../lib/contract';
 import QRCodeGenerator from '../../components/QRCodeGenerator';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
 
 export default function Dashboard() {
   const { address } = useAccount();
@@ -22,38 +24,54 @@ export default function Dashboard() {
   });
 
   if (!address) {
-    return <div className="text-center py-12">🔐 Connect Wallet to View Dashboard</div>;
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-green-200 py-12 px-4 flex items-center justify-center">
+          <div className="text-center py-12">
+            <p className="text-2xl font-semibold text-gray-700">🔐 Connect Wallet to View Dashboard</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-body py-12 px-4">
-      <div className="max-w-5xl mx-auto space-y-10">
-        <h1 className="text-3xl font-bold text-center text-dark">🎫 Your Dashboard</h1>
+    <>
+      <Header />
+      <main className="min-h-screen bg-green-200 py-12 px-4">
+        <div className="max-w-5xl mx-auto space-y-10">
+          <h1 className="text-3xl font-bold text-center text-gray-800">🎫 Your Dashboard</h1>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-2xl shadow">
-            <h2 className="text-xl font-semibold text-dark">Total Events</h2>
-            <p className="text-3xl mt-2 text-primary">{totalEvents?.toString() || '0'}</p>
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-2xl shadow-lg">
+              <h2 className="text-xl font-semibold text-gray-800">Total Events</h2>
+              <p className="text-3xl mt-2 text-green-600">{totalEvents?.toString() || '0'}</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl shadow-lg">
+              <h2 className="text-xl font-semibold text-gray-800">Discount</h2>
+              <p className="text-3xl mt-2 text-blue-600">{userDiscount?.toString() || '0'}%</p>
+            </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow">
-            <h2 className="text-xl font-semibold text-dark">Discount</h2>
-            <p className="text-3xl mt-2 text-secondary">{userDiscount?.toString() || '0'}%</p>
+          {/* QR Code */}
+          <div className="flex justify-center">
+            <QRCodeGenerator address={address} />
+          </div>
+
+          {/* Past Tickets */}
+          <div className="bg-white p-6 rounded-2xl shadow-lg">
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'orange' }}>
+              🎟️ Your NFT Tickets
+            </h2>
+            <p className="text-gray-600">You have minted tickets for 2 events.</p>
           </div>
         </div>
-
-        {/* QR Code */}
-        <div className="flex justify-center">
-          <QRCodeGenerator address={address} />
-        </div>
-
-        {/* Past Tickets (mock) */}
-        <div className="bg-white p-6 rounded-2xl shadow">
-          <h2 className="text-xl font-semibold mb-4">🎟️ Your NFT Tickets</h2>
-          <p className="text-gray-600">You have minted tickets for 2 events.</p>
-        </div>
-      </div>
-    </div>
+      </main>
+      <Footer />
+    </>
   );
 }

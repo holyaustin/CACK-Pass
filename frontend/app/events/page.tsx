@@ -1,45 +1,36 @@
-// app/events/EventsClient.tsx
+// app/events/page.tsx
 'use client';
 
 import { useReadContract, useSwitchChain, useAccount } from 'wagmi';
-import { contractAbi } from '../../lib/contract';
-import EventCard from '../../components/EventCard';
-import Header from '../../components/Header';
-import Footer from '../../components/Footer';
-
-// ✅ Define Fuji Chain
+import { contractAbi } from '@/lib/contract';
+import EventCard from '@/components/EventCard';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { avalancheFuji } from 'wagmi/chains';
+import { useEffect, useState } from 'react';
 
-export default function EventsClient({ initialTotalEvents }: { initialTotalEvents: number }) {
+export default function EventsPage() {
   const { address, chain, isConnected } = useAccount();
-
-  // 🔁 Switch to Fuji if not already
   const { switchChain } = useSwitchChain();
 
-  const {
-    data: totalEvents,
-    isLoading,
-    isError,
-  } = useReadContract({
+  const [finalTotal, setFinalTotal] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  const { data: totalEventsData, isLoading: isTotalLoading } = useReadContract({
     address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
     abi: contractAbi,
     functionName: 'totalEvents',
-    chainId: avalancheFuji.id, // ✅ Read from Fuji
-    query: {
-      enabled: !!process.env.NEXT_PUBLIC_CONTRACT_ADDRESS, // Only fetch if address is set
-    },
+    chainId: avalancheFuji.id,
   });
 
-  // Use on-chain data if available, fallback to server-provided
-  const finalTotal = totalEvents ? Number(totalEvents) : initialTotalEvents;
+  useEffect(() => {
+    if (totalEventsData !== undefined) {
+      setFinalTotal(Number(totalEventsData));
+      setLoading(false);
+    }
+  }, [totalEventsData]);
 
-  // Generate mock event list
-  const events = Array.from({ length: finalTotal }, (_, i) => ({
-    id: i,
-    name: `Event #${i + 1}`,
-    date: new Date(Date.now() + i * 86400000).toISOString().split('T')[0],
-    location: 'Enugu, Nigeria',
-  }));
+  const totalToShow = finalTotal > 0 ? finalTotal - 1 : 0; // Exclude ID 0
 
   return (
     <>
@@ -47,9 +38,9 @@ export default function EventsClient({ initialTotalEvents }: { initialTotalEvent
 
       <main className="min-h-screen bg-gray-50 py-12 px-4">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">🎟️ All Events</h1>
+          <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">🎟️ Events</h1>
 
-          {/* 🔗 Wallet Status */}
+          {/* Wallet Status */}
           {isConnected ? (
             <div className="text-center mb-6">
               <p className="text-sm text-gray-600">
@@ -72,36 +63,31 @@ export default function EventsClient({ initialTotalEvents }: { initialTotalEvent
           )}
 
           {/* Loading */}
-          {isLoading && (
+          {(isTotalLoading || loading) && (
             <div className="text-center py-10">
               <div className="inline-block animate-spin w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full"></div>
-              <p className="mt-4 text-gray-600">Loading events from Avalanche Fuji...</p>
-            </div>
-          )}
-
-          {/* Error */}
-          {isError && (
-            <div className="text-center py-10">
-              <p className="text-red-600 font-semibold">❌ Failed to load events</p>
-              <p className="text-gray-500 mt-2">Check contract address or network.</p>
+              <p className="mt-4 text-gray-600">Loading events...</p>
             </div>
           )}
 
           {/* No Events */}
-          {!isLoading && !isError && finalTotal === 0 && (
+          {!isTotalLoading && !loading && totalToShow === 0 && (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">🎫</div>
-              <h2 className="text-2xl font-bold text-gray-700 mb-2">No Event Currently</h2>
-              <p className="text-gray-500">Stay tuned! New events will be added soon.</p>
+              <h2 className="text-2xl font-bold text-gray-700 mb-2">No Events Yet</h2>
+              <p className="text-gray-500">Stay tuned for upcoming events.</p>
             </div>
           )}
 
           {/* Events Grid */}
-          {!isLoading && !isError && finalTotal > 0 && (
+          {!isTotalLoading && !loading && totalToShow > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {events.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
+              {Array.from({ length: finalTotal }, (_, i) => i)
+                .filter(id => id !== 0) // ✅ Skip event ID 0
+                .map(id => (
+                  <EventCard key={id} eventId={id} />
+                ))
+              }
             </div>
           )}
         </div>

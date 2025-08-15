@@ -34,9 +34,9 @@ export default function Hero() {
         </Link>
 
         {/* Powered By Section */}
-        <div className="mt-8">
+        <div className="mt-2">
           <h2 className="text-xl md:text-2xl font-bold text-white mb-6">Powered By</h2>
-          <div className="flex justify-center space-x-12">
+          <div className="flex justify-center space-x-6">
             {/* Avalanche */}
             <button
               onClick={() => switchChain({ chainId: avalanche.id })}

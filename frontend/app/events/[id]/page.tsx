@@ -1,150 +1,356 @@
 // app/events/[id]/page.tsx
 'use client';
 
-import { useAccount, useWriteContract, useReadContract } from 'wagmi';
-import { contractAbi } from '../../../lib/contract';
+import { useParams } from 'next/navigation';
+import { useAccount, useReadContract, useWriteContract, useSwitchChain, useSendTransaction } from 'wagmi';
+import { contractAbi } from '@/lib/contract';
 import { useEffect, useState } from 'react';
+import axios from 'axios';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { avalancheFuji } from 'wagmi/chains';
-import { useSwitchChain } from 'wagmi';
-import Header from '../../../components/Header';
-import Footer from '../../../components/Footer';
+import { useRouter } from 'next/navigation';
 
-export default function EventDetail({ params }: { params: { id: string } }) {
-  const { address, chain } = useAccount();
+const GATEWAY_URL = 'https://ipfs.io/ipfs/';
+const TREASURY_ADDRESS = '0x2c3b2B2325610a6814f2f822D0bF4DAB8CF16e16';
+const PAYMENT_AMOUNT_WEI = 1500000000000000n; // 0.0015 AVAX
+
+interface NFTMetadata {
+  name: string;
+  description: string;
+  image: string;
+  external_url?: string;
+  animation_url?: string;
+  attributes?: Array<{
+    trait_type: string;
+    value: string | number | boolean;
+  }>;
+}
+
+interface ParsedEvent {
+  id: number;
+  name: string;
+  description: string;
+  date: string;
+  location: string;
+  image: string;
+  external_url?: string;
+  animation_url?: string;
+}
+
+function ipfsToHttp(url: string): string {
+  if (!url) return '/placeholder-event.jpg';
+  return url.startsWith('ipfs://')
+    ? `${GATEWAY_URL}${url.slice(7)}`
+    : url;
+}
+
+export default function EventDetailPage() {
+  const { id } = useParams();
+  const rawId = Array.isArray(id) ? id[0] : id;
+  const eventId = typeof rawId === 'string' ? parseInt(rawId, 10) : NaN;
+  const isValidId = !isNaN(eventId) && eventId >= 0;
+
+  const { address, isConnected, chain } = useAccount();
   const { switchChain } = useSwitchChain();
   const { writeContract } = useWriteContract();
+  const { sendTransaction } = useSendTransaction();
+  const router = useRouter();
 
-  const [event, setEvent] = useState<any>(null);
-  const eventId = BigInt(params.id); // ✅ Convert to BigInt
+  const [eventData, setEventData] = useState<ParsedEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 🔍 Check if user has already minted this event
-  const {
-    data: hasMinted,
-    isLoading: checkingMint,
-    refetch: refetchMintStatus,
-  } = useReadContract({
+  const { data: hasMinted } = useReadContract({
     address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
     abi: contractAbi,
     functionName: 'hasUserMinted',
-    args: [eventId, address!],
+    args: isValidId && address ? [BigInt(eventId), address] : [BigInt(0), '0x0000000000000000000000000000000000000000'],
     query: {
-      enabled: !!address, // Only run if wallet is connected
+      enabled: !!address && isValidId,
     },
   });
 
-  // Simulate fetching event data (replace with IPFS/metadata later)
+  // Fetch metadata
   useEffect(() => {
-    const fetchEvent = async () => {
-      setEvent({
-        name: `ETH Enugu Hackathon #${params.id}`,
-        date: '2024-12-10',
-        location: 'Enugu, Nigeria',
-        description: 'Join us for an epic Web3 hackathon in Enugu! Mint your NFT ticket and earn POAP.',
-        image: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=800',
-      });
-    };
-    fetchEvent();
-  }, [params.id]);
+    if (!isValidId) {
+      setError('Invalid event ID');
+      setLoading(false);
+      return;
+    }
 
-  // 🔁 Handle Mint
-  const handleMint = () => {
+    const fetchMetadata = async () => {
+      try {
+        const { readContract } = await import('@wagmi/core');
+        const { wagmiConfig } = await import('@/lib/wagmi');
+
+        const result = await readContract(wagmiConfig, {
+          address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
+          abi: contractAbi,
+          functionName: 'events',
+          args: [BigInt(eventId)],
+          chainId: avalancheFuji.id,
+        });
+
+        const baseURI = (result as { [key: string]: any })?.[1];
+        if (!baseURI || typeof baseURI !== 'string') {
+          throw new Error('Invalid or missing baseURI');
+        }
+
+        const metadataUrl = ipfsToHttp(baseURI);
+        const { data: metadata } = await axios.get<NFTMetadata>(metadataUrl, { timeout: 15000 });
+
+        const date = metadata.attributes?.find(a => a.trait_type === 'Date')?.value || 'TBA';
+        const location = metadata.attributes?.find(a => a.trait_type === 'Location')?.value || 'TBA';
+
+        setEventData({
+          id: eventId,
+          name: metadata.name,
+          description: metadata.description,
+          date: String(date),
+          location: String(location),
+          image: ipfsToHttp(metadata.image),
+          external_url: metadata.external_url,
+          animation_url: metadata.animation_url ? ipfsToHttp(metadata.animation_url) : '',
+        });
+      } catch (err: any) {
+        console.error('Failed to load metadata:', err.message);
+        setError('Failed to load event data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetadata();
+  }, [eventId, isValidId]);
+
+  // Auto-switch to Fuji
+  useEffect(() => {
+    if (isConnected && chain?.id !== avalancheFuji.id) {
+      switchChain({ chainId: avalancheFuji.id });
+    }
+  }, [isConnected, chain, switchChain]);
+
+  // ✅ Button state: idle → paying → minting → success
+  const [buttonState, setButtonState] = useState<'idle' | 'paying' | 'minting' | 'success'>('idle');
+
+  const handleBuyTicket = () => {
+    if (!isConnected) return;
     if (chain?.id !== avalancheFuji.id) {
       switchChain({ chainId: avalancheFuji.id });
       return;
     }
+    if (hasMinted) return;
 
-    writeContract({
-      address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
-      abi: contractAbi,
-      functionName: 'mintEventNFT',
-      args: [eventId], // ✅ Now BigInt
-      onSuccess: () => {
-        alert('🎉 Ticket minted successfully!');
-        refetchMintStatus(); // Refresh mint status
+    setButtonState('paying');
+
+    // Step 1: Send AVAX to Treasury
+    sendTransaction(
+      {
+        to: TREASURY_ADDRESS,
+        value: PAYMENT_AMOUNT_WEI,
+        chainId: avalancheFuji.id,
       },
-      onError: (error) => {
-        console.error('Mint failed:', error);
-        alert('❌ Mint failed: ' + error.message);
-      },
-    });
+      {
+        onSuccess: () => {
+          setButtonState('minting');
+
+          // Step 2: Mint NFT
+          writeContract(
+            {
+              address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
+              abi: contractAbi,
+              functionName: 'mintEventNFT',
+              args: [BigInt(eventId)],
+              chainId: avalancheFuji.id,
+            },
+            {
+              onSuccess: () => {
+                setButtonState('success');
+                setTimeout(() => {
+                  router.push('/dashboard');
+                }, 1500);
+              },
+              onError: (err) => {
+                console.error('Mint failed:', err);
+                setButtonState('idle');
+                alert('Minting failed. Please try again.');
+              },
+            }
+          );
+        },
+        onError: (err) => {
+          console.error('Payment failed:', err);
+          setButtonState('idle');
+          alert('Payment failed. Please try again.');
+        },
+      }
+    );
   };
 
-  if (!event) return <div className="text-center py-20">Loading event...</div>;
+  // Share URLs
+  const shareText = `Check out "${eventData?.name}" on Onchain Social Mixer!`;
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(currentUrl)}`;
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${currentUrl}`)}`;
+
+  const handleAddToCalendar = () => {
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'BEGIN:VEVENT',
+      `UID:${Date.now()}@onchain-social-mixer`,
+      `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, '').split('T')[0]}T000000Z`,
+      `DTSTART:${new Date().toISOString().slice(0, 10).replace(/-/g, '')}T100000`,
+      `DTEND:${new Date().toISOString().slice(0, 10).replace(/-/g, '')}T180000`,
+      `SUMMARY:${eventData?.name}`,
+      `DESCRIPTION:${eventData?.description}`,
+      `LOCATION:${eventData?.location}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\n');
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `event-${eventId}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Early returns
+  if (!isValidId) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-gray-50 py-12 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-2xl font-bold text-red-600 mb-2">Invalid Event ID</h2>
+            <p className="text-gray-600">Please go back and select a valid event.</p>
+            <a href="/events" className="text-blue-600 hover:underline block mt-4">← Back to Events</a>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-gray-50 py-12 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-block animate-spin w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full"></div>
+            <p className="mt-4 text-gray-600">Loading event details...</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
+
+  if (error || !eventData) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-gray-50 py-12 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-2xl font-bold text-red-600 mb-2">Event Not Found</h2>
+            <p className="text-gray-600">Could not load event details. Try again later.</p>
+            <a href="/events" className="text-blue-600 hover:underline block mt-4">← Back to Events</a>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
       <Header />
+      <main className="min-h-screen bg-gray-50 py-8 px-4">
+        <div className="max-w-5xl mx-auto">
+          <a href="/events" className="inline-block mb-6 text-blue-600 hover:underline font-medium">← All Events</a>
 
-      <main className="min-h-screen bg-gray-50 py-12 px-4">
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
-          {/* Event Image */}
-          <div className="relative h-64 md:h-80 w-full">
-            <img
-              src={event.image}
-              alt={event.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-
-          {/* Content */}
-          <div className="p-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3">{event.name}</h1>
-            <p className="text-lg text-gray-600 mb-6">
-              📅 {event.date} • 📍 {event.location}
-            </p>
-
-            <p className="text-gray-700 leading-relaxed mb-8">{event.description}</p>
-
-            {/* Mint Button */}
-            <div className="space-y-4">
-              {checkingMint ? (
-                <div className="text-center py-4">
-                  <div className="inline-block animate-spin w-6 h-6 border-2 border-green-600 border-t-transparent rounded-full mr-2"></div>
-                  <span className="text-gray-600">Checking mint status...</span>
-                </div>
-              ) : hasMinted ? (
-                <button
-                  disabled
-                  className="w-full bg-blue-100 text-blue-800 font-bold py-3 px-8 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  ✅ Already Minted
-                </button>
-              ) : !address ? (
-                <button
-                  onClick={() => {
-                    // This will be handled by WalletConnectButton
-                  }}
-                  className="w-full bg-gray-400 text-white font-bold py-3 px-8 rounded-lg"
-                >
-                  Connect Wallet to Mint
-                </button>
-              ) : chain?.id !== avalancheFuji.id ? (
-                <button
-                  onClick={() => switchChain({ chainId: avalancheFuji.id })}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg"
-                >
-                  🔁 Switch to Avalanche Fuji
-                </button>
-              ) : (
-                <button
-                  onClick={handleMint}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition"
-                >
-                  🎟️ Mint Ticket
-                </button>
-              )}
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="relative h-64 md:h-80">
+              <img
+                src={eventData.image}
+                alt={eventData.name}
+                className="w-full h-full object-cover"
+                onError={(e) => ((e.target as HTMLImageElement).src = '/placeholder-event.jpg')}
+              />
+              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-semibold">
+                {hasMinted ? '✅ Attending' : '🎟️ Not Minted'}
+              </div>
             </div>
 
-            {/* Network Info */}
-            {address && chain && (
-              <p className="text-xs text-gray-500 text-center mt-4">
-                Connected on <strong>{chain.name}</strong>
-              </p>
-            )}
+            <div className="p-8">
+              <h1 className="text-3xl font-bold text-gray-800 mb-3">{eventData.name}</h1>
+              <p className="text-gray-600 text-lg mb-6">{eventData.description}</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                  <strong className="text-gray-700">📅 Date:</strong>
+                  <p className="text-gray-600">{eventData.date}</p>
+                </div>
+                <div>
+                  <strong className="text-gray-700">📍 Location:</strong>
+                  <p className="text-gray-600">{eventData.location}</p>
+                </div>
+              </div>
+
+              {/* ✅ SINGLE BUTTON: Buy Ticket */}
+              <div className="text-center mb-6">
+                <button
+                  onClick={handleBuyTicket}
+                  disabled={buttonState !== 'idle' || hasMinted}
+                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:bg-gray-400 text-white text-lg font-bold rounded-lg shadow-lg transition w-full max-w-xs mx-auto"
+                >
+                  {buttonState === 'idle' && !hasMinted && '🎟️ BUY TICKET'}
+                  {buttonState === 'paying' && '💸 Sending 0.0015 AVAX...'}
+                  {buttonState === 'minting' && '🎫 Minting Ticket...'}
+                  {buttonState === 'success' && '✅ Success! Redirecting...'}
+                  {hasMinted && '✅ Already Minted'}
+                </button>
+                {!hasMinted && buttonState === 'idle' && (
+                  <p className="text-xs text-gray-500 mt-2">Requires 0.0015 AVAX</p>
+                )}
+              </div>
+
+            {/* Share Section */}
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">📤 Share this ticket on socials</h3>
+              <div className="flex flex-wrap justify-center gap-4">
+                <button
+                  onClick={handleAddToCalendar}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition"
+                >
+                  📅 Add to Calendar
+                </button>
+                <a
+                  href={twitterUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg text-sm font-semibold transition"
+                >
+                  🐦 Twitter
+                </a>
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold transition"
+                >
+                  💬 WhatsApp
+                </a>
+              </div>
+            </div>
+            </div>
           </div>
         </div>
       </main>
-
       <Footer />
     </>
   );

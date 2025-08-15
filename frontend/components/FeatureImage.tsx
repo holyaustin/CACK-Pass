@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function FeatureImage() {
   return (
-    <section className="py-16 px-4 bg-white">
+    <section className="py-16 px-16 bg-white">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
           Why Choose Onchain Social Mixer?
