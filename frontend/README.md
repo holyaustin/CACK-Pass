@@ -63,6 +63,11 @@ ipfs://bafkreieqe7wb6o5onj67q5nz7tm5vun63pmncw7p4bkvjacj2oocqiummy
 https://cyan-heavy-kangaroo-977.mypinata.cloud/ipfs/bafkreieqe7wb6o5onj67q5nz7tm5vun63pmncw7p4bkvjacj2oocqiummy?pinataGatewayToken=Iss53sCyzaPLsP6lZvZ1asjo3DUcy6hbZLbhrwCzbtXCtTVWQn76QRFJ1ngj_CHT
 
 Jazz
-ipfs://bafkreieqe7wb6o5onj67q5nz7tm5vun63pmncw7p4bkvjacj2oocqiummy
+ipfs://bafkreidzqp5qcuqoysamwb6aixcr5xp6lnhugjmouluwufxokvs5tqffie
 
 https://cyan-heavy-kangaroo-977.mypinata.cloud/ipfs/bafkreidzqp5qcuqoysamwb6aixcr5xp6lnhugjmouluwufxokvs5tqffie?pinataGatewayToken=Iss53sCyzaPLsP6lZvZ1asjo3DUcy6hbZLbhrwCzbtXCtTVWQn76QRFJ1ngj_CHT
+
+ OnchainSocialMixer v2 deployed to: 0xDBc97b18999EF0F02720868Bc09563dBCcb9e8B4
+
+📌 Contract Address (Save this):
+0xDBc97b18999EF0F02720868Bc09563dBCcb9e8B4

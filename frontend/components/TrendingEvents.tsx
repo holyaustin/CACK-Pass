@@ -11,7 +11,7 @@ const mockEvents = [
     name: "ETH Enugu Meetup",
     date: "2024-12-10",
     location: "Enugu, Nigeria",
-    image: "/ethenugu.webp",
+    image: "/enugu2.webp",
   },
   {
     id: 1,

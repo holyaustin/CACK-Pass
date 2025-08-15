@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 contract OnchainSocialMixer is Ownable, ERC721 {
     using Counters for Counters.Counter;
 
-    // Event structure
     struct Event {
         string name;
         string baseURI;
@@ -16,25 +15,28 @@ contract OnchainSocialMixer is Ownable, ERC721 {
         mapping(address => bool) hasMinted;
     }
 
-    // Global discount percentage (e.g., 10 = 10%)
-    uint256 public globalDiscountPercent;
+    // Pricing
+    uint256 public constant MINT_PRICE = 0.0015 ether; // 0.0015 ETH per ticket
 
-    // Mapping from event ID to Event
+    // Max NFTs per event (to avoid ID collision)
+    uint256 private constant MAX_NFTS_PER_EVENT = 10000;
+
+    // Treasury address (can be updated)
+    address public treasuryWallet;
+
+    // Events
     mapping(uint256 => Event) public events;
     Counters.Counter private eventCounter;
 
-    // Track user's NFT count across all past events (for discount logic)
+    // User stats
     mapping(address => uint256) public nftBalance;
-
-    // POAP tracking: eventID → address → bool
     mapping(uint256 => mapping(address => bool)) public hasReceivedPOAP;
 
     // Events
     event EventCreated(uint256 indexed eventId, string name, string baseURI);
     event NFTMinted(address indexed user, uint256 indexed eventId, uint256 tokenId);
-    event DiscountUpdated(uint256 newDiscountPercent);
+    event TreasuryWalletUpdated(address newWallet);
     event POAPAirdropped(address indexed recipient, uint256 indexed eventId);
-
 
     // ============= MODIFIERS =============
     modifier onlyAdmin() {
@@ -43,13 +45,13 @@ contract OnchainSocialMixer is Ownable, ERC721 {
     }
 
     // ============= CONSTRUCTOR =============
-    constructor() ERC721("OnchainSocialMixer", "OSM") {}
+    constructor(address _treasuryWallet) ERC721("OnchainSocialMixer v2", "OSM") {
+        require(_treasuryWallet != address(0), "Invalid treasury");
+        treasuryWallet = _treasuryWallet;
+    }
 
     // ============= ADMIN FUNCTIONS =============
 
-    /// @notice Create a new event with its own NFT collection
-    /// @param name Name of the event
-    /// @param baseURI Base URI for NFT metadata
     function createEvent(string memory name, string memory baseURI) external onlyAdmin {
         uint256 eventId = eventCounter.current();
         Event storage newEvent = events[eventId];
@@ -59,24 +61,14 @@ contract OnchainSocialMixer is Ownable, ERC721 {
         emit EventCreated(eventId, name, baseURI);
     }
 
-    /// @notice Update global discount percentage (e.g., 15 for 15%)
-    /// @param newDiscountPercent Discount in percent (0-100)
-    function updateGlobalDiscount(uint256 newDiscountPercent) external onlyAdmin {
-        require(newDiscountPercent <= 100, "Discount too high");
-        globalDiscountPercent = newDiscountPercent;
-        emit DiscountUpdated(newDiscountPercent);
+    function updateTreasuryWallet(address _newWallet) external onlyAdmin {
+        require(_newWallet != address(0), "Invalid wallet");
+        treasuryWallet = _newWallet;
+        emit TreasuryWalletUpdated(_newWallet);
     }
 
-    /// @notice Transfer ownership
-    function transferOwnership(address newOwner) public override onlyAdmin {
-        super.transferOwnership(newOwner);
-        emit OwnershipTransferred(msg.sender, newOwner);
-    }
-
-    /// @notice Airdrop POAP to users after event
-    /// @param eventId The event ID
-    /// @param recipients List of recipient addresses
     function sendPOAPs(uint256 eventId, address[] calldata recipients) external onlyAdmin {
+        require(eventId < eventCounter.current(), "Invalid event ID");
         for (uint256 i = 0; i < recipients.length; i++) {
             address user = recipients[i];
             require(!hasReceivedPOAP[eventId][user], "Already received POAP");
@@ -85,61 +77,71 @@ contract OnchainSocialMixer is Ownable, ERC721 {
         }
     }
 
-    // ============= PUBLIC FUNCTIONS =============
+    // ============= PUBLIC PAYABLE MINT FUNCTION =============
 
-    /// @notice Mint event NFT. Users get discount if they own any past NFTs
-    /// @param eventId The event to mint for
-    function mintEventNFT(uint256 eventId) external {
-        // Checks
+    /**
+     * @notice Mint an NFT for a specific event (payable)
+     * @param eventId The ID of the event
+     */
+    function mintEventNFT(uint256 eventId) external payable {
+        // Check valid event
         require(eventId < eventCounter.current(), "Invalid event ID");
+
+        // Check hasn't minted
         Event storage eventRef = events[eventId];
         require(!eventRef.hasMinted[msg.sender], "Already minted for this event");
 
-        // Get tokenId
-        uint256 tokenId = eventRef.tokenIdCounter.current();
+        // Check correct ETH sent
+        require(msg.value >= MINT_PRICE, "Insufficient ETH");
+
+        // Generate globally unique token ID
+        uint256 localTokenId = eventRef.tokenIdCounter.current();
+        uint256 tokenId = eventId * MAX_NFTS_PER_EVENT + localTokenId;
 
         // Mint NFT
         _safeMint(msg.sender, tokenId);
 
-        // State updates
+        // Update state
         eventRef.tokenIdCounter.increment();
         eventRef.hasMinted[msg.sender] = true;
         nftBalance[msg.sender]++;
 
+        // Send ETH to treasury
+        (bool success, ) = treasuryWallet.call{value: msg.value}("");
+        require(success, "Transfer failed");
+
         emit NFTMinted(msg.sender, eventId, tokenId);
     }
 
-    /// @notice Check discount for user based on previous NFT ownership
-    /// @return Final discount percent (either global or enhanced if eligible)
-    function getUserDiscount() external view returns (uint256) {
-        return nftBalance[msg.sender] > 0 ? globalDiscountPercent : 0;
-    }
+    // ============= VIEW FUNCTIONS =============
 
-    /// @notice Check if user minted for a specific event
-    /// @param eventId Event ID
-    /// @param user Address
-    /// @return bool
-    function hasUserMinted(uint256 eventId, address user) external view returns (bool) {
-        return events[eventId].hasMinted[user];
-    }
-
-    /// @notice Get total number of events created
     function totalEvents() external view returns (uint256) {
         return eventCounter.current();
     }
 
-    /// ✅ NEW: On-Chain Verification for QR-Based Admission
-    /// @notice Verify if a user can attend an event (owns NFT ticket or POAP)
-    /// @param eventId The event ID
-    /// @param user The attendee's address
-    /// @return bool True if admitted
+    function hasUserMinted(uint256 eventId, address user) external view returns (bool) {
+        return events[eventId].hasMinted[user];
+    }
+
+    function getUserDiscount() external view returns (uint256) {
+        return nftBalance[msg.sender] > 0 ? 10 : 0; // Example: 10% discount
+    }
+
     function verifyAdmission(uint256 eventId, address user) external view returns (bool) {
         return events[eventId].hasMinted[user] || hasReceivedPOAP[eventId][user];
     }
 
-    // ============= INTERNAL OVERRIDES =============
+    // Optional: Return metadata URI
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        uint256 eventId = tokenId / MAX_NFTS_PER_EVENT;
+        require(eventId < eventCounter.current(), "Invalid token");
+        return events[eventId].baseURI;
+    }
 
-    function _baseURI() internal pure override returns (string memory) {
-        return ""; // Custom per-token URI via metadata
+    // Allow owner to withdraw (fallback)
+    function withdraw() external onlyAdmin {
+        (bool success, ) = payable(owner()).call{value: address(this).balance}("");
+        require(success, "Withdraw failed");
     }
 }

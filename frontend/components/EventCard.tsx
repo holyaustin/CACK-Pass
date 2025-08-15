@@ -28,6 +28,9 @@ interface ParsedEvent {
 export default function EventCard({ eventId }: { eventId: number }) {
   const { address } = useAccount();
 
+      console.log ("smart contract address is ", process.env.NEXT_PUBLIC_CONTRACT_ADDRESS );
+    console.log ("smart contract address is ",address );
+
   // ✅ Only enable if eventId is valid number
   const isValidEventId = typeof eventId === 'number' && !isNaN(eventId) && eventId >= 0;
 

@@ -23,12 +23,18 @@ export default function EventsPage() {
     chainId: avalancheFuji.id,
   });
 
+
+
+
   useEffect(() => {
     if (totalEventsData !== undefined) {
       setFinalTotal(Number(totalEventsData));
       setLoading(false);
     }
   }, [totalEventsData]);
+
+    console.log ("smart contract address is ", process.env.NEXT_PUBLIC_CONTRACT_ADDRESS );
+    console.log ("smart contract address is ",address );
 
   const totalToShow = finalTotal > 0 ? finalTotal - 1 : 0; // Exclude ID 0
 

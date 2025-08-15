@@ -10,13 +10,13 @@ export default function Footer() {
           <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
             <Image
               src="/logoosm.png"
-              alt="Onchain Social Mixer"
+              alt="CACK-Pass"
               width={1000}
               height={500}
               className="rounded-xl shadow-2xl mx-auto border-4 border-orange-400"
             />
           </div>
-          <span className="text-lg font-bold">Onchain Social Mixer</span>
+          <span className="text-lg font-bold">CACK-Pass</span>
         </Link>
 
         {/* Dashboard & Events Links */}
@@ -31,7 +31,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <p className="text-gray-400 mb-2">
-          Web3 Ticketing System © {new Date().getFullYear()}
+          Event Ticketing System © {new Date().getFullYear()}
         </p>
         <p className="text-sm text-gray-500">
           Powered by Avalanche. Built for community.

@@ -1,7 +1,8 @@
+// app/events/[id]/page.tsx
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useAccount, useReadContract, useWriteContract, useSwitchChain } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useSwitchChain, useSendTransaction } from 'wagmi';
 import { contractAbi } from '@/lib/contract';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
@@ -12,7 +13,7 @@ import { useRouter } from 'next/navigation';
 
 const GATEWAY_URL = 'https://ipfs.io/ipfs/';
 const TREASURY_ADDRESS = '0x2c3b2B2325610a6814f2f822D0bF4DAB8CF16e16';
-const PAYMENT_AMOUNT_WEI = 1500000000000000n; // 0.0015 ETH
+const PAYMENT_AMOUNT_WEI = 1500000000000000n; // 0.0015 AVAX
 
 interface NFTMetadata {
   name: string;
@@ -52,12 +53,13 @@ export default function EventDetailPage() {
 
   const { address, isConnected, chain } = useAccount();
   const { switchChain } = useSwitchChain();
-  const { writeContract, isPending, isError, error } = useWriteContract();
+  const { writeContract } = useWriteContract();
+  const { sendTransaction } = useSendTransaction();
   const router = useRouter();
 
   const [eventData, setEventData] = useState<ParsedEvent | null>(null);
   const [loading, setLoading] = useState(true);
-  const [buttonState, setButtonState] = useState<'idle' | 'minting' | 'success'>('idle');
+  const [error, setError] = useState<string | null>(null);
 
   const { data: hasMinted } = useReadContract({
     address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
@@ -72,6 +74,7 @@ export default function EventDetailPage() {
   // Fetch metadata
   useEffect(() => {
     if (!isValidId) {
+      setError('Invalid event ID');
       setLoading(false);
       return;
     }
@@ -89,7 +92,7 @@ export default function EventDetailPage() {
           chainId: avalancheFuji.id,
         });
 
-        const baseURI = (result as any)[1];
+        const baseURI = (result as { [key: string]: any })?.[1];
         if (!baseURI || typeof baseURI !== 'string') {
           throw new Error('Invalid or missing baseURI');
         }
@@ -112,6 +115,7 @@ export default function EventDetailPage() {
         });
       } catch (err: any) {
         console.error('Failed to load metadata:', err.message);
+        setError('Failed to load event data');
       } finally {
         setLoading(false);
       }
@@ -120,12 +124,15 @@ export default function EventDetailPage() {
     fetchMetadata();
   }, [eventId, isValidId]);
 
-  // Auto-switch chain
+  // Auto-switch to Fuji
   useEffect(() => {
     if (isConnected && chain?.id !== avalancheFuji.id) {
       switchChain({ chainId: avalancheFuji.id });
     }
   }, [isConnected, chain, switchChain]);
+
+  // ✅ Button state: idle → paying → minting → success
+  const [buttonState, setButtonState] = useState<'idle' | 'paying' | 'minting' | 'success'>('idle');
 
   const handleBuyTicket = () => {
     if (!isConnected) return;
@@ -133,51 +140,69 @@ export default function EventDetailPage() {
       switchChain({ chainId: avalancheFuji.id });
       return;
     }
-    if (hasMinted || buttonState !== 'idle') return;
+    if (hasMinted) return;
 
-    setButtonState('minting');
+    setButtonState('paying');
 
-    writeContract(
+    // Step 1: Send AVAX to Treasury
+    sendTransaction(
       {
-        address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
-        abi: contractAbi,
-        functionName: 'mintEventNFT',
-        args: [BigInt(eventId)],
+        to: TREASURY_ADDRESS,
         value: PAYMENT_AMOUNT_WEI,
         chainId: avalancheFuji.id,
       },
       {
         onSuccess: () => {
-          setButtonState('success');
-          setTimeout(() => {
-            router.push('/dashboard');
-          }, 1500);
+          setButtonState('minting');
+
+          // Step 2: Mint NFT
+          writeContract(
+            {
+              address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
+              abi: contractAbi,
+              functionName: 'mintEventNFT',
+              args: [BigInt(eventId)],
+              chainId: avalancheFuji.id,
+            },
+            {
+              onSuccess: () => {
+                setButtonState('success');
+                setTimeout(() => {
+                  router.push('/dashboard');
+                }, 1500);
+              },
+              onError: (err) => {
+                console.error('Mint failed:', err);
+                setButtonState('idle');
+                alert('Minting failed. Please try again.');
+              },
+            }
+          );
         },
         onError: (err) => {
-          console.error('Mint failed:', err);
+          console.error('Payment failed:', err);
           setButtonState('idle');
-          alert(`Mint failed: ${err.message.includes('user rejected') ? 'Transaction rejected' : 'Check ETH amount or network'}`);
+          alert('Payment failed. Please try again.');
         },
       }
     );
   };
 
-  // Share logic
+  // Share URLs
   const shareText = `Check out "${eventData?.name}" on Onchain Social Mixer!`;
   const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
   const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(currentUrl)}`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${currentUrl}`)}`;
 
   const handleAddToCalendar = () => {
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const ics = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'BEGIN:VEVENT',
       `UID:${Date.now()}@onchain-social-mixer`,
-      `DTSTAMP:${today}T000000Z`,
-      `DTSTART:${today}T100000`,
-      `DTEND:${today}T180000`,
+      `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, '').split('T')[0]}T000000Z`,
+      `DTSTART:${new Date().toISOString().slice(0, 10).replace(/-/g, '')}T100000`,
+      `DTEND:${new Date().toISOString().slice(0, 10).replace(/-/g, '')}T180000`,
       `SUMMARY:${eventData?.name}`,
       `DESCRIPTION:${eventData?.description}`,
       `LOCATION:${eventData?.location}`,
@@ -193,17 +218,52 @@ export default function EventDetailPage() {
     URL.revokeObjectURL(url);
   };
 
-  // Loading / Error States
+  // Early returns
   if (!isValidId) {
-    return <ErrorPage message="Invalid Event ID" />;
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-gray-50 py-12 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-2xl font-bold text-red-600 mb-2">Invalid Event ID</h2>
+            <p className="text-gray-600">Please go back and select a valid event.</p>
+            <a href="/events" className="text-blue-600 hover:underline block mt-4">← Back to Events</a>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
   }
 
   if (loading) {
-    return <LoadingPage />;
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-gray-50 py-12 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-block animate-spin w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full"></div>
+            <p className="mt-4 text-gray-600">Loading event details...</p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
   }
 
-  if (!eventData) {
-    return <ErrorPage message="Event Not Found" />;
+  if (error || !eventData) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-gray-50 py-12 px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-2xl font-bold text-red-600 mb-2">Event Not Found</h2>
+            <p className="text-gray-600">Could not load event details. Try again later.</p>
+            <a href="/events" className="text-blue-600 hover:underline block mt-4">← Back to Events</a>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
   }
 
   return (
@@ -241,7 +301,7 @@ export default function EventDetailPage() {
                 </div>
               </div>
 
-              {/* Mint Button */}
+              {/* ✅ SINGLE BUTTON: Buy Ticket */}
               <div className="text-center mb-6">
                 <button
                   onClick={handleBuyTicket}
@@ -249,63 +309,48 @@ export default function EventDetailPage() {
                   className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:bg-gray-400 text-white text-lg font-bold rounded-lg shadow-lg transition w-full max-w-xs mx-auto"
                 >
                   {buttonState === 'idle' && !hasMinted && '🎟️ BUY TICKET'}
-                  {buttonState === 'minting' && '🕒 Confirming...'}
+                  {buttonState === 'paying' && '💸 Sending 0.0015 AVAX...'}
+                  {buttonState === 'minting' && '🎫 Minting Ticket...'}
                   {buttonState === 'success' && '✅ Success! Redirecting...'}
                   {hasMinted && '✅ Already Minted'}
                 </button>
-                {!hasMinted && <p className="text-xs text-gray-500 mt-2">0.001 ETH</p>}
+                {!hasMinted && buttonState === 'idle' && (
+                  <p className="text-xs text-gray-500 mt-2">Requires 0.0015 AVAX</p>
+                )}
               </div>
 
-              {/* Share */}
-              <div className="text-center">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">📤 Share this event</h3>
-                <div className="flex flex-wrap justify-center gap-4">
-                  <button onClick={handleAddToCalendar} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold">
-                    📅 Add to Calendar
-                  </button>
-                  <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg text-sm font-semibold">
-                    🐦 Twitter
-                  </a>
-                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold">
-                    💬 WhatsApp
-                  </a>
-                </div>
+            {/* Share Section */}
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4">📤 Share this ticket on socials</h3>
+              <div className="flex flex-wrap justify-center gap-4">
+                <button
+                  onClick={handleAddToCalendar}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition"
+                >
+                  📅 Add to Calendar
+                </button>
+                <a
+                  href={twitterUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg text-sm font-semibold transition"
+                >
+                  🐦 Twitter
+                </a>
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold transition"
+                >
+                  💬 WhatsApp
+                </a>
               </div>
+            </div>
             </div>
           </div>
         </div>
       </main>
-      <Footer />
-    </>
-  );
-}
-
-// Helper Components
-function ErrorPage({ message }: { message: string }) {
-  return (
-    <>
-      <Header />
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-2">{message}</h2>
-          <a href="/events" className="text-blue-600 hover:underline">← Back to Events</a>
-        </div>
-      </div>
-      <Footer />
-    </>
-  );
-}
-
-function LoadingPage() {
-  return (
-    <>
-      <Header />
-      <div className="min-h-screen bg-gray-50 py-12 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-block animate-spin w-12 h-12 border-4 border-green-600 border-t-transparent rounded-full"></div>
-          <p className="mt-4 text-gray-600">Loading event...</p>
-        </div>
-      </div>
       <Footer />
     </>
   );

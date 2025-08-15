@@ -11,15 +11,15 @@ export default function Header() {
           <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center">
                     <Image
                       src="/logoosm.png"
-                      alt="Onchain Social Mixer"
+                      alt="CACK-Pass"
                       width={1000}
                       height={500}
                       className="rounded-xl shadow-2xl mx-auto border-4 border-orange-400"
                     />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-800 font-bold text-orange-400">Onchain Social Mixer</h1>
-            <p className="text-sm text-green-600 font-bold">Web3 Ticketing System</p>
+            <h1 className="text-xl font-bold text-gray-800 font-bold text-orange-400">CACK-Pass</h1>
+            <p className="text-sm text-green-600 font-bold">Event Ticketing System</p>
           </div>
         </Link>
         <div className="flex-shrink-0">

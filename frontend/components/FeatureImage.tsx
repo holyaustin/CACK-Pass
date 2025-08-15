@@ -6,7 +6,7 @@ export default function FeatureImage() {
     <section className="py-16 px-16 bg-white">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
-          Why Choose Onchain Social Mixer?
+          Why Choose CACK-Pass?
         </h2>
 
         <div className="flex flex-col md:flex-row gap-8 items-center justify-center">
@@ -14,14 +14,14 @@ export default function FeatureImage() {
           <div className="flex-1 min-w-[250px] text-center">
             <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden shadow-2xl border-4 border-green-400">
               <Image
-                src="/logosent.jpg"
+                src="/cackpas.jpg"
                 alt="Event Ticket NFT"
                 width={400}
                 height={400}
                 className="object-cover"
               />
             </div>
-            <h3 className="mt-4 text-xl font-semibold text-gray-800">🎟️ Onchain Social Mixer</h3>
+            <h3 className="mt-4 text-xl font-semibold text-gray-800">🎟️ CACK-Pass</h3>
             <p className="text-gray-600 mt-1">Your ticket is a unique NFT — verifiable and tradable.</p>
           </div>
 
