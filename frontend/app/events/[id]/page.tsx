@@ -9,6 +9,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { avalancheFuji } from 'wagmi/chains';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const GATEWAY_URL = 'https://ipfs.io/ipfs/';
 const TREASURY_ADDRESS = '0x2c3b2B2325610a6814f2f822D0bF4DAB8CF16e16';
@@ -258,16 +259,35 @@ export default function EventDetailPage() {
 
               {/* Share */}
               <div className="text-center">
-                <h3 className="text-lg font-bold text-gray-800 mb-4">📤 Share this event</h3>
+                <h3 className="text-lg font-bold text-gray-800 mb-4">📤 Share</h3>
                 <div className="flex flex-wrap justify-center gap-4">
-                  <button onClick={handleAddToCalendar} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold">
-                    📅 Add to Calendar
+                  <button onClick={handleAddToCalendar} className="px-4 py-2  hover:bg-green-400 text-white rounded-lg text-sm font-semibold">
+                                  <Image
+                                    src="/calendar.png"
+                                    alt="Event Ticket NFT"
+                                    width={32}
+                                    height={32}
+                                    className="object-cover"
+                                  />
+                    
                   </button>
-                  <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg text-sm font-semibold">
-                    🐦 Twitter
+                  <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2  hover:bg-green-400 text-white rounded-lg text-sm font-semibold">
+                   <Image
+                                    src="/twitter.png"
+                                    alt="Event Ticket NFT"
+                                    width={32}
+                                    height={32}
+                                    className="object-cover"
+                                  />
                   </a>
-                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold">
-                    💬 WhatsApp
+                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 hover:bg-green-400 text-white rounded-lg text-sm font-semibold">
+                    <Image
+                                    src="/whatsapp.png"
+                                    alt="Event Ticket NFT"
+                                    width={32}
+                                    height={32}
+                                    className="object-cover"
+                                  />
                   </a>
                 </div>
               </div>
